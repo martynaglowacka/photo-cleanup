@@ -1,4 +1,4 @@
-# Weekend 1 — clustering only. We add deps as we reach each weekend
-# (opencv, face detection, fastapi, etc. come later) to keep installs painless.
 imagehash>=4.3
 Pillow>=10.0
+opencv-contrib-python>=4.9
+mediapipe>=0.10
