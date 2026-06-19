@@ -1,0 +1,160 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>PhotoCleanup — review</title>
+<style>
+  body { font-family:system-ui,sans-serif; margin:0; background:#111; color:#eee; }
+  header { padding:14px 24px; background:#1a1a1a; position:sticky; top:0; z-index:10;
+           display:flex; justify-content:space-between; align-items:center; }
+  h1 { margin:0; font-size:17px; }
+  header a { color:#3ba55d; font-size:13px; text-decoration:none; }
+  .section { padding:14px 24px; border-bottom:1px solid #222; }
+  .sechead { display:flex; align-items:baseline; gap:10px; cursor:pointer; margin:0 0 12px;
+             font-size:14px; font-weight:600; user-select:none; }
+  .sechead .cnt { color:#666; font-weight:400; font-size:12px; }
+  .sechead.keep span:first-child { color:#3ba55d; }
+  .sechead.maybe span:first-child { color:#d6a23a; }
+  .grid { display:flex; flex-wrap:wrap; gap:12px; align-items:flex-start; }
+  .card { width:190px; position:relative; border-radius:8px; overflow:hidden; cursor:pointer;
+          border:3px solid transparent; background:#1a1a1a; transition:transform .12s; }
+  .card:hover { transform:scale(1.07); z-index:5; }
+  .card img { width:190px; height:190px; object-fit:cover; display:block; }
+  .card.keep { border-color:#3ba55d; }
+  .card.maybe { border-color:#d6a23a; }
+  .card.delete { opacity:.5; }
+  .meta { font-size:11px; padding:4px 7px; display:flex; justify-content:space-between; color:#bbb; }
+  .badge { position:absolute; top:6px; left:6px; font-size:10px; padding:2px 8px; border-radius:10px;
+           background:#3ba55d; color:#fff; text-transform:uppercase; letter-spacing:.04em; }
+  .maybe .badge { background:#d6a23a; }
+  .delete .badge { background:#666; }
+  .why { position:absolute; bottom:25px; left:0; right:0; padding:6px 7px 4px; font-size:11px;
+         background:linear-gradient(transparent,rgba(0,0,0,.88)); opacity:0; transition:opacity .12s; }
+  .card:hover .why { opacity:1; }
+  .toggle { position:absolute; top:6px; right:6px; background:rgba(0,0,0,.65); border-radius:4px;
+            padding:2px 7px; font-size:11px; opacity:0; }
+  .card:hover .toggle { opacity:1; }
+  #cmp { display:none; position:fixed; inset:0; background:rgba(0,0,0,.96); z-index:100; flex-direction:column; }
+  #cmp .hero { flex:1; display:flex; align-items:center; justify-content:center; position:relative; min-height:0; }
+  #cmp .hero img { max-width:86vw; max-height:70vh; }
+  #cmp .arrow { position:absolute; top:50%; transform:translateY(-50%); font-size:44px; color:#fff;
+                background:none; border:0; cursor:pointer; padding:0 26px; opacity:.65; }
+  #cmp .arrow:hover { opacity:1; }
+  #cmp .arrow.left { left:0; } #cmp .arrow.right { right:0; }
+  #cmp .bar { padding:10px 18px; font-size:13px; color:#ccc; display:flex; justify-content:space-between; }
+  #cmp .strip { display:flex; gap:8px; padding:12px; overflow-x:auto; background:#141414; }
+  #cmp .strip img { height:78px; border-radius:4px; cursor:pointer; border:2px solid transparent; opacity:.55; }
+  #cmp .strip img.active { border-color:#3ba55d; opacity:1; }
+  #cmp .close { position:absolute; top:14px; right:20px; font-size:22px; color:#fff; cursor:pointer; z-index:2; }
+</style>
+</head>
+<body>
+<header><h1>PhotoCleanup — review</h1><a href="/">↻ new batch</a></header>
+<div id="app">Loading…</div>
+
+<div id="cmp">
+  <span class="close" onclick="closeCmp()">✕</span>
+  <div class="hero">
+    <button class="arrow left" onclick="step(-1)">‹</button>
+    <img id="hero-img">
+    <button class="arrow right" onclick="step(1)">›</button>
+  </div>
+  <div class="bar"><span id="cmp-name"></span><span id="cmp-why"></span></div>
+  <div class="strip" id="strip"></div>
+</div>
+
+<script>
+const enc = encodeURIComponent;
+let DATA = null;
+let compare = { photos: [], idx: 0 };
+const open = { keep: true, delete: false, maybe: false };
+
+async function load() {
+  DATA = await (await fetch('/api/clusters')).json();
+  for (const c of DATA.clusters) for (const p of c.photos) p._cluster = c.photos;  // remember burst
+  render();
+}
+
+function render() {
+  const all = [];
+  for (const c of DATA.clusters) all.push(...c.photos);
+  const app = document.getElementById('app');
+  app.innerHTML = '';
+  app.appendChild(section('Keep', 'keep', all.filter(p => p.recommendation === 'keep')));
+  app.appendChild(section('Delete', 'delete', all.filter(p => p.recommendation === 'delete')));
+  app.appendChild(section('Maybe', 'maybe', all.filter(p => p.recommendation === 'maybe')));
+}
+
+function section(title, key, photos) {
+  const sec = document.createElement('div');
+  sec.className = 'section';
+  const head = document.createElement('div');
+  head.className = 'sechead ' + key;
+  head.innerHTML = `<span>${open[key] ? '▾' : '▸'} ${title}</span><span class="cnt">${photos.length}</span>`;
+  head.onclick = () => { open[key] = !open[key]; render(); };
+  sec.appendChild(head);
+  if (open[key] && photos.length) {
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    photos.forEach(p => grid.appendChild(card(p)));
+    sec.appendChild(grid);
+  }
+  return sec;
+}
+
+function card(photo) {
+  const div = document.createElement('div');
+  div.className = 'card ' + photo.recommendation;
+  const why = (photo.reasons || []).join(' · ');
+  div.innerHTML = `
+    <span class="badge">${photo.recommendation}</span>
+    <span class="toggle">keep / del</span>
+    <img src="/thumb/${enc(photo.name)}" loading="lazy">
+    ${why ? `<div class="why">${why}</div>` : ''}
+    <div class="meta"><span>${photo.name}</span><span>${photo.score ?? ''}</span></div>`;
+  div.querySelector('.toggle').onclick = (e) => {
+    e.stopPropagation();
+    photo.recommendation = { keep: 'delete', delete: 'keep', maybe: 'keep' }[photo.recommendation];
+    render();
+  };
+  div.onclick = () => openCmp(photo._cluster, photo);
+  return div;
+}
+
+function openCmp(photos, photo) {
+  compare = { photos, idx: Math.max(0, photos.indexOf(photo)) };
+  renderCmp();
+  document.getElementById('cmp').style.display = 'flex';
+}
+function renderCmp() {
+  const p = compare.photos[compare.idx];
+  document.getElementById('hero-img').src = '/photo/' + enc(p.name);
+  document.getElementById('cmp-name').textContent = `${p.name} · ${p.recommendation}`;
+  document.getElementById('cmp-why').textContent = (p.reasons || []).join(' · ');
+  const strip = document.getElementById('strip');
+  strip.innerHTML = '';
+  compare.photos.forEach((q, i) => {
+    const t = document.createElement('img');
+    t.src = '/thumb/' + enc(q.name);
+    if (i === compare.idx) t.className = 'active';
+    t.onclick = () => { compare.idx = i; renderCmp(); };
+    strip.appendChild(t);
+  });
+}
+function step(d) {
+  compare.idx = (compare.idx + d + compare.photos.length) % compare.photos.length;
+  renderCmp();
+}
+function closeCmp() { document.getElementById('cmp').style.display = 'none'; }
+
+document.addEventListener('keydown', e => {
+  if (document.getElementById('cmp').style.display !== 'flex') return;
+  if (e.key === 'ArrowLeft') step(-1);
+  else if (e.key === 'ArrowRight') step(1);
+  else if (e.key === 'Escape') closeCmp();
+});
+
+load();
+</script>
+</body>
+</html>

@@ -1,4 +1,8 @@
 imagehash>=4.3
 Pillow>=10.0
+pillow-heif>=0.16
 opencv-contrib-python>=4.9
 mediapipe>=0.10
+fastapi>=0.110
+uvicorn>=0.27
+python-multipart>=0.0.9
