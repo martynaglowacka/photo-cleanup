@@ -8,7 +8,15 @@
   header { padding:14px 24px; background:#1a1a1a; position:sticky; top:0; z-index:10;
            display:flex; justify-content:space-between; align-items:center; }
   h1 { margin:0; font-size:17px; }
-  header a { color:#3ba55d; font-size:13px; text-decoration:none; }
+  header .right { display:flex; gap:14px; align-items:center; }
+  header a { color:#888; font-size:13px; text-decoration:none; }
+  #approve { background:#3ba55d; color:#fff; border:0; border-radius:8px; padding:9px 18px;
+             font-size:14px; cursor:pointer; }
+  .keepctl { display:flex; align-items:center; gap:10px; font-size:13px; color:#bbb; }
+  .keepctl input[type=number] { width:54px; background:#1a1a1a; color:#eee; border:1px solid #333;
+                                border-radius:6px; padding:5px; font-size:13px; text-align:center; }
+  .banner { margin:14px 24px 0; padding:10px 14px; background:#2a2410; border:1px solid #4a3f18;
+            border-radius:8px; color:#e8c96a; font-size:13px; }
   .section { padding:14px 24px; border-bottom:1px solid #222; }
   .sechead { display:flex; align-items:baseline; gap:10px; cursor:pointer; margin:0 0 12px;
              font-size:14px; font-weight:600; user-select:none; }
@@ -23,33 +31,59 @@
   .card.keep { border-color:#3ba55d; }
   .card.maybe { border-color:#d6a23a; }
   .card.delete { opacity:.5; }
+  .card.delete:hover { opacity:1; }
   .meta { font-size:11px; padding:4px 7px; display:flex; justify-content:space-between; color:#bbb; }
   .badge { position:absolute; top:6px; left:6px; font-size:10px; padding:2px 8px; border-radius:10px;
            background:#3ba55d; color:#fff; text-transform:uppercase; letter-spacing:.04em; }
   .maybe .badge { background:#d6a23a; }
   .delete .badge { background:#666; }
-  .why { position:absolute; bottom:25px; left:0; right:0; padding:6px 7px 4px; font-size:11px;
-         background:linear-gradient(transparent,rgba(0,0,0,.88)); opacity:0; transition:opacity .12s; }
+  .why { position:absolute; top:28px; left:6px; right:6px; padding:3px 6px; font-size:10px;
+         border-radius:4px; background:rgba(0,0,0,.72); opacity:0; transition:opacity .12s; }
   .card:hover .why { opacity:1; }
-  .toggle { position:absolute; top:6px; right:6px; background:rgba(0,0,0,.65); border-radius:4px;
-            padding:2px 7px; font-size:11px; opacity:0; }
-  .card:hover .toggle { opacity:1; }
+  .acts { position:absolute; bottom:25px; left:0; right:0; display:flex; opacity:0; transition:opacity .12s; }
+  .card:hover .acts { opacity:1; }
+  .acts button { flex:1; border:0; padding:7px 0; font-size:11px; font-weight:600; cursor:pointer; color:#fff; }
+  .acts .del { background:rgba(210,60,60,.94); }
+  .acts .keep { background:rgba(59,165,93,.94); }
   #cmp { display:none; position:fixed; inset:0; background:rgba(0,0,0,.96); z-index:100; flex-direction:column; }
   #cmp .hero { flex:1; display:flex; align-items:center; justify-content:center; position:relative; min-height:0; }
-  #cmp .hero img { max-width:86vw; max-height:70vh; }
+  #cmp .hero img { max-width:86vw; max-height:68vh; }
   #cmp .arrow { position:absolute; top:50%; transform:translateY(-50%); font-size:44px; color:#fff;
                 background:none; border:0; cursor:pointer; padding:0 26px; opacity:.65; }
   #cmp .arrow:hover { opacity:1; }
   #cmp .arrow.left { left:0; } #cmp .arrow.right { right:0; }
-  #cmp .bar { padding:10px 18px; font-size:13px; color:#ccc; display:flex; justify-content:space-between; }
+  #cmp .bar { padding:10px 18px; font-size:13px; color:#ccc; display:flex; justify-content:space-between;
+              align-items:center; }
+  #cmp .cmp-acts button { border:0; border-radius:6px; padding:8px 18px; font-size:13px; cursor:pointer;
+                          margin-left:8px; color:#fff; opacity:.5; }
+  #cmp .cmp-acts .del { background:#c83c3c; }
+  #cmp .cmp-acts .keep { background:#3ba55d; }
+  #cmp .cmp-acts button.active { opacity:1; outline:2px solid #fff; }
   #cmp .strip { display:flex; gap:8px; padding:12px; overflow-x:auto; background:#141414; }
   #cmp .strip img { height:78px; border-radius:4px; cursor:pointer; border:2px solid transparent; opacity:.55; }
   #cmp .strip img.active { border-color:#3ba55d; opacity:1; }
   #cmp .close { position:absolute; top:14px; right:20px; font-size:22px; color:#fff; cursor:pointer; z-index:2; }
+  .modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.8); z-index:200;
+           align-items:center; justify-content:center; }
+  .modal-box { background:#1c1c1c; border:1px solid #333; border-radius:12px; padding:24px; max-width:440px; }
+  .modal-box p { margin:0 0 18px; line-height:1.5; font-size:14px; }
+  .modal-btns { display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap; }
+  .modal-btns button { border:0; border-radius:8px; padding:9px 16px; font-size:13px; cursor:pointer; }
+  .modal-btns .ghost { background:#333; color:#eee; }
+  .modal-btns .primary { background:#3ba55d; color:#fff; }
+  .modal-btns .warnbtn { background:#d6a23a; color:#111; }
 </style>
 </head>
 <body>
-<header><h1>PhotoCleanup — review</h1><a href="/">↻ new batch</a></header>
+<header>
+  <h1>Photo Cleanup — results</h1>
+  <div class="keepctl">
+    <label>Keep</label>
+    <input type="number" id="keep-num" min="1" placeholder="N">
+    <label>photos — type a number, Enter to re-rank</label>
+  </div>
+  <div class="right"><button id="approve">Approve &amp; export</button><a href="/">↻ new batch</a></div>
+</header>
 <div id="app">Loading…</div>
 
 <div id="cmp">
@@ -59,27 +93,103 @@
     <img id="hero-img">
     <button class="arrow right" onclick="step(1)">›</button>
   </div>
-  <div class="bar"><span id="cmp-name"></span><span id="cmp-why"></span></div>
+  <div class="bar">
+    <span><span id="cmp-name"></span> &nbsp; <span id="cmp-why" style="color:#888"></span></span>
+    <span class="cmp-acts">
+      <button class="del" onclick="cmpSet('delete')">✕ Delete</button>
+      <button class="keep" onclick="cmpSet('keep')">✓ Keep</button>
+    </span>
+  </div>
   <div class="strip" id="strip"></div>
+</div>
+
+<div id="warn" class="modal">
+  <div class="modal-box">
+    <p id="warn-text"></p>
+    <div class="modal-btns">
+      <button class="ghost" onclick="reviewMaybes()">Review them</button>
+      <button class="warnbtn" onclick="continueAnyway()">Continue anyway</button>
+    </div>
+  </div>
+</div>
+
+<div id="choice" class="modal">
+  <div class="modal-box">
+    <p>How should I finish? Your delete photos are <b>moved, never erased</b> — recoverable either way.</p>
+    <div class="modal-btns">
+      <button class="ghost" onclick="execute('export')">Keep folder unchanged — download a copy</button>
+      <button class="primary" onclick="execute('in_place')">Clean folder in place</button>
+    </div>
+  </div>
+</div>
+
+<div id="done" class="modal">
+  <div class="modal-box">
+    <p id="done-text"></p>
+    <div class="modal-btns"><button class="primary" onclick="location.href='/'">Done</button></div>
+  </div>
 </div>
 
 <script>
 const enc = encodeURIComponent;
 let DATA = null;
 let compare = { photos: [], idx: 0 };
-const open = { keep: true, delete: false, maybe: false };
+const open = { keep: true, delete: false, maybe: true };
+const show = id => document.getElementById(id).style.display = 'flex';
+const hide = id => document.getElementById(id).style.display = 'none';
 
 async function load() {
   DATA = await (await fetch('/api/clusters')).json();
   for (const c of DATA.clusters) for (const p of c.photos) p._cluster = c.photos;  // remember burst
+  if (DATA.mode === 'folder') document.getElementById('approve').textContent = 'Approve';
   render();
+  initKeepControl();
+}
+
+function allPhotos() {
+  const all = [];
+  for (const c of DATA.clusters) all.push(...c.photos);
+  return all;
+}
+
+function allocateKeeps(sizes, totalKeep) {
+  if (!sizes.length) return [];
+  const grand = sizes.reduce((a, b) => a + b, 0);
+  return sizes.map(s => Math.min(s, Math.max(1, Math.round(totalKeep * s / grand))));
+}
+function reallocate(n) {
+  const multi = DATA.clusters.filter(c => c.size > 1);
+  const keeps = allocateKeeps(multi.map(c => c.size), n);
+  multi.forEach((c, i) => c.photos.forEach((p, j) => {
+    p.recommendation = j < keeps[i] ? 'keep' : 'delete';
+  }));
+  render();
+}
+function initKeepControl() {
+  const multiTotal = DATA.clusters.filter(c => c.size > 1).reduce((s, c) => s + c.size, 0);
+  const ctl = document.querySelector('.keepctl');
+  if (multiTotal === 0) { ctl.style.display = 'none'; return; }
+  const num = document.getElementById('keep-num');
+  num.max = multiTotal;
+  num.value = allPhotos().filter(p => p.recommendation === 'keep').length || 1;
+  num.onchange = () => {
+    const v = Number(num.value);
+    if (v >= 1) { num.value = Math.min(v, multiTotal); reallocate(Number(num.value)); }
+  };
 }
 
 function render() {
-  const all = [];
-  for (const c of DATA.clusters) all.push(...c.photos);
+  const all = allPhotos();
   const app = document.getElementById('app');
   app.innerHTML = '';
+  const maybes = all.filter(p => p.recommendation === 'maybe').length;
+  if (maybes > 0) {
+    const b = document.createElement('div');
+    b.className = 'banner';
+    b.innerHTML = `<b>Warning:</b> ${maybes} photo(s) are in <b>Maybe</b> — review each and set it to Keep or Delete. ` +
+                  `Anything left in Maybe becomes a delete candidate when you click Approve.`;
+    app.appendChild(b);
+  }
   app.appendChild(section('Keep', 'keep', all.filter(p => p.recommendation === 'keep')));
   app.appendChild(section('Delete', 'delete', all.filter(p => p.recommendation === 'delete')));
   app.appendChild(section('Maybe', 'maybe', all.filter(p => p.recommendation === 'maybe')));
@@ -88,6 +198,7 @@ function render() {
 function section(title, key, photos) {
   const sec = document.createElement('div');
   sec.className = 'section';
+  sec.id = 'sec-' + key;
   const head = document.createElement('div');
   head.className = 'sechead ' + key;
   head.innerHTML = `<span>${open[key] ? '▾' : '▸'} ${title}</span><span class="cnt">${photos.length}</span>`;
@@ -102,21 +213,20 @@ function section(title, key, photos) {
   return sec;
 }
 
+function setRec(photo, rec) { photo.recommendation = rec; render(); }
+
 function card(photo) {
   const div = document.createElement('div');
   div.className = 'card ' + photo.recommendation;
   const why = (photo.reasons || []).join(' · ');
   div.innerHTML = `
     <span class="badge">${photo.recommendation}</span>
-    <span class="toggle">keep / del</span>
     <img src="/thumb/${enc(photo.name)}" loading="lazy">
     ${why ? `<div class="why">${why}</div>` : ''}
-    <div class="meta"><span>${photo.name}</span><span>${photo.score ?? ''}</span></div>`;
-  div.querySelector('.toggle').onclick = (e) => {
-    e.stopPropagation();
-    photo.recommendation = { keep: 'delete', delete: 'keep', maybe: 'keep' }[photo.recommendation];
-    render();
-  };
+    <div class="acts"><button class="del">✕ Delete</button><button class="keep">✓ Keep</button></div>
+    <div class="meta"><span>${photo.name}</span></div>`;
+  div.querySelector('.acts .del').onclick = (e) => { e.stopPropagation(); setRec(photo, 'delete'); };
+  div.querySelector('.acts .keep').onclick = (e) => { e.stopPropagation(); setRec(photo, 'keep'); };
   div.onclick = () => openCmp(photo._cluster, photo);
   return div;
 }
@@ -124,13 +234,15 @@ function card(photo) {
 function openCmp(photos, photo) {
   compare = { photos, idx: Math.max(0, photos.indexOf(photo)) };
   renderCmp();
-  document.getElementById('cmp').style.display = 'flex';
+  show('cmp');
 }
 function renderCmp() {
   const p = compare.photos[compare.idx];
   document.getElementById('hero-img').src = '/photo/' + enc(p.name);
   document.getElementById('cmp-name').textContent = `${p.name} · ${p.recommendation}`;
   document.getElementById('cmp-why').textContent = (p.reasons || []).join(' · ');
+  document.querySelector('.cmp-acts .del').classList.toggle('active', p.recommendation === 'delete');
+  document.querySelector('.cmp-acts .keep').classList.toggle('active', p.recommendation === 'keep');
   const strip = document.getElementById('strip');
   strip.innerHTML = '';
   compare.photos.forEach((q, i) => {
@@ -141,11 +253,12 @@ function renderCmp() {
     strip.appendChild(t);
   });
 }
+function cmpSet(rec) { compare.photos[compare.idx].recommendation = rec; renderCmp(); }
 function step(d) {
   compare.idx = (compare.idx + d + compare.photos.length) % compare.photos.length;
   renderCmp();
 }
-function closeCmp() { document.getElementById('cmp').style.display = 'none'; }
+function closeCmp() { hide('cmp'); render(); }
 
 document.addEventListener('keydown', e => {
   if (document.getElementById('cmp').style.display !== 'flex') return;
@@ -153,6 +266,53 @@ document.addEventListener('keydown', e => {
   else if (e.key === 'ArrowRight') step(1);
   else if (e.key === 'Escape') closeCmp();
 });
+
+// --- Approve ---
+document.getElementById('approve').onclick = () => {
+  const maybes = allPhotos().filter(p => p.recommendation === 'maybe').length;
+  if (maybes > 0) {
+    document.getElementById('warn-text').textContent =
+      `${maybes} photo(s) are still in "Maybe". If you continue, they'll be moved to ` +
+      `delete_candidates (recoverable — nothing is erased). Review them first?`;
+    show('warn');
+  } else {
+    afterMaybes();
+  }
+};
+function reviewMaybes() {
+  hide('warn');
+  open.maybe = true;
+  render();
+  document.getElementById('sec-maybe').scrollIntoView({ behavior: 'smooth' });
+}
+function continueAnyway() { hide('warn'); afterMaybes(); }
+function afterMaybes() {
+  if (DATA.mode === 'folder') show('choice');
+  else execute('export');
+}
+async function execute(action) {
+  hide('choice');
+  const decisions = {};
+  allPhotos().forEach(p => decisions[p.name] = p.recommendation === 'keep' ? 'keep' : 'delete');
+  const res = await fetch('/api/approve', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ decisions, action }),
+  });
+  if (action === 'in_place') {
+    const r = await res.json();
+    document.getElementById('done-text').textContent =
+      `✓ Moved ${r.moved} photos to delete_candidates/. Your folder now holds only the keeps — ` +
+      `trash that folder whenever you're ready.`;
+    show('done');
+  } else {
+    const blob = await res.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'photocleanup_result.zip';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+}
 
 load();
 </script>

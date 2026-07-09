@@ -6,19 +6,24 @@
 <style>
   body { font-family:system-ui,sans-serif; margin:0; min-height:100vh; background:#111; color:#eee;
          display:flex; align-items:center; justify-content:center; }
-  .panel { width:480px; max-width:90vw; text-align:center; }
+  .panel { width:520px; max-width:92vw; text-align:center; }
   h1 { font-size:22px; margin-bottom:4px; }
   p.sub { color:#999; margin-top:0; font-size:14px; }
-  #drop { border:2px dashed #444; border-radius:12px; padding:44px 20px; margin:24px 0;
-          cursor:pointer; transition:border-color .15s, background .15s; }
+  .keeprow { display:flex; align-items:center; justify-content:center; gap:8px; margin:18px 0; font-size:14px; }
+  input[type=number] { width:60px; background:#1a1a1a; color:#eee; border:1px solid #333;
+                       border-radius:6px; padding:6px; font-size:14px; text-align:center; }
+  #drop { border:2px dashed #444; border-radius:12px; padding:34px 20px; cursor:pointer;
+          transition:border-color .15s, background .15s; }
   #drop.over { border-color:#3ba55d; background:#16201a; }
   #count { color:#3ba55d; font-size:13px; min-height:18px; margin-top:8px; }
-  .row { display:flex; align-items:center; justify-content:center; gap:8px; margin:16px 0; font-size:14px; }
-  input[type=number] { width:64px; background:#1a1a1a; color:#eee; border:1px solid #333;
-                       border-radius:6px; padding:6px; font-size:14px; text-align:center; }
-  button { background:#3ba55d; color:#fff; border:0; border-radius:8px; padding:12px 30px;
-           font-size:15px; cursor:pointer; }
+  .or { color:#666; font-size:12px; margin:20px 0 10px; }
+  .folder-row { display:flex; gap:8px; }
+  #folder { flex:1; background:#1a1a1a; color:#eee; border:1px solid #333; border-radius:6px;
+            padding:9px; font-size:13px; }
+  button { background:#3ba55d; color:#fff; border:0; border-radius:8px; padding:10px 20px;
+           font-size:14px; cursor:pointer; white-space:nowrap; }
   button:disabled { background:#333; color:#777; cursor:default; }
+  #go { margin-top:12px; padding:12px 30px; }
   #status { margin-top:18px; color:#999; font-size:13px; min-height:18px; }
   .spinner { display:inline-block; width:14px; height:14px; border:2px solid #555;
              border-top-color:#3ba55d; border-radius:50%; animation:spin 1s linear infinite;
@@ -29,24 +34,32 @@
 <body>
 <div class="panel">
   <h1>PhotoCleanup</h1>
-  <p class="sub">Drop your photos. I'll group the near-duplicates and recommend which to keep.</p>
+  <p class="sub">Group near-duplicates, recommend which to keep. Nothing is ever erased.</p>
+
+  <div class="keeprow">
+    <label>Keep about</label><input type="number" id="keep" min="1" placeholder="e.g. 5"><label>photos total</label>
+  </div>
+
   <div id="drop">
     <div>Drag photos here, or click to choose</div>
     <div id="count"></div>
   </div>
   <input type="file" id="file" multiple accept="image/*,.heic,.heif" hidden>
-  <div class="row">
-    <label>Keep about</label>
-    <input type="number" id="keep" value="4" min="1">
-    <label>photos total</label>
+  <button id="go" disabled>Analyze upload</button>
+
+  <div class="or">— or clean a folder on this computer in place —</div>
+  <div class="folder-row">
+    <input type="text" id="folder" placeholder="/Users/you/Pictures/Gallery">
+    <button id="go-folder">Analyze folder</button>
   </div>
-  <button id="go" disabled>Analyze</button>
+
   <div id="status"></div>
 </div>
 <script>
 const drop = document.getElementById('drop');
 const fileInput = document.getElementById('file');
 const go = document.getElementById('go');
+const status = document.getElementById('status');
 let files = [];
 
 function setFiles(list) {
@@ -54,23 +67,35 @@ function setFiles(list) {
   document.getElementById('count').textContent = files.length ? `${files.length} photos selected` : '';
   go.disabled = files.length === 0;
 }
-
 drop.onclick = () => fileInput.click();
 fileInput.onchange = () => setFiles(fileInput.files);
 drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
 drop.ondragleave = () => drop.classList.remove('over');
 drop.ondrop = e => { e.preventDefault(); drop.classList.remove('over'); setFiles(e.dataTransfer.files); };
 
+function busy(msg) { status.innerHTML = `<span class="spinner"></span>${msg}`; }
+
 go.onclick = async () => {
   go.disabled = true;
-  document.getElementById('status').innerHTML =
-    `<span class="spinner"></span>Analyzing ${files.length} photos… this can take a minute.`;
+  busy(`Analyzing ${files.length} photos…`);
   const fd = new FormData();
-  fd.append('keep', document.getElementById('keep').value);
+  fd.append('keep', document.getElementById('keep').value || '5');
   files.forEach(f => fd.append('files', f));
   const res = await fetch('/api/analyze', { method:'POST', body:fd });
   if (res.ok) window.location = '/results';
-  else { document.getElementById('status').textContent = 'Something went wrong — try again.'; go.disabled = false; }
+  else { status.textContent = 'Upload failed — try again.'; go.disabled = false; }
+};
+
+document.getElementById('go-folder').onclick = async () => {
+  const path = document.getElementById('folder').value.trim();
+  if (!path) { status.textContent = 'Enter a folder path.'; return; }
+  busy('Analyzing folder…');
+  const res = await fetch('/api/analyze_folder', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ path, keep: Number(document.getElementById('keep').value) || 5 }),
+  });
+  if (res.ok) window.location = '/results';
+  else { const e = await res.json().catch(() => ({})); status.textContent = e.error || 'Folder analysis failed.'; }
 };
 </script>
 </body>

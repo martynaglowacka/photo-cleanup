@@ -8,6 +8,8 @@ import mediapipe as mp
 from mediapipe.tasks import python as mp_python
 from mediapipe.tasks.python import vision
 
+from .cache import content_key, get_eyes, put_eyes
+
 _MODEL = Path(__file__).resolve().parent.parent / "models" / "face_landmarker.task"
 _landmarker = None
 
@@ -68,6 +70,16 @@ def _ear(landmarks, w, h):
 
 
 def eyes_open(path):
+    key = content_key(path)
+    hit, value = get_eyes(key)
+    if hit:
+        return value
+    value = _compute_eyes(path)
+    put_eyes(key, value)
+    return value
+
+
+def _compute_eyes(path):
     img = PIL.ImageOps.exif_transpose(PIL.Image.open(path)).convert("RGB")  # honor rotation
     w, h = img.size
     lm = _get_landmarker()
