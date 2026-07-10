@@ -104,6 +104,23 @@ def api_clusters():
     return {"clusters": STATE["clusters"], "mode": STATE["mode"], "source": str(STATE["source"] or "")}
 
 
+@app.get("/thumb/{name}")
+def thumb(name: str):
+    data = STATE["thumbs"].get(name)
+    return Response(data, media_type="image/jpeg") if data else Response(status_code=404)
+
+
+@app.get("/photo/{name}")
+def photo(name: str):
+    path = STATE["paths"].get(name)
+    if path is None:
+        return Response(status_code=404)
+    img = PIL.ImageOps.exif_transpose(PIL.Image.open(path)).convert("RGB")
+    buf = io.BytesIO()
+    img.save(buf, "JPEG", quality=90)
+    return Response(buf.getvalue(), media_type="image/jpeg")
+
+
 @app.post("/api/approve")
 def approve(payload: dict = Body(...)):
     decisions = payload["decisions"]  # {name: "keep" | "delete"}
