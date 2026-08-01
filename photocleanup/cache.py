@@ -8,7 +8,7 @@ _DB = Path(__file__).resolve().parent.parent / "data" / "cache.db"
 def _conn():
     _DB.parent.mkdir(exist_ok=True)
     conn = sqlite3.connect(_DB)
-    conn.execute("CREATE TABLE IF NOT EXISTS eyes (key TEXT PRIMARY KEY, value REAL)")
+    conn.execute("CREATE TABLE IF NOT EXISTS faces (key TEXT PRIMARY KEY, eyes REAL, face_sharp REAL)")
     return conn
 
 
@@ -20,12 +20,11 @@ def content_key(path):
     return h.hexdigest()  # keyed by bytes, so a re-upload to a new temp path still hits
 
 
-def get_eyes(key):
+def get_faces(key):
     with _conn() as conn:
-        row = conn.execute("SELECT value FROM eyes WHERE key = ?", (key,)).fetchone()
-    return (True, row[0]) if row else (False, None)
+        return conn.execute("SELECT eyes, face_sharp FROM faces WHERE key = ?", (key,)).fetchone()
 
 
-def put_eyes(key, value):
+def put_faces(key, eyes, face_sharp):
     with _conn() as conn:
-        conn.execute("INSERT OR REPLACE INTO eyes (key, value) VALUES (?, ?)", (key, value))
+        conn.execute("INSERT OR REPLACE INTO faces (key, eyes, face_sharp) VALUES (?, ?, ?)", (key, eyes, face_sharp))

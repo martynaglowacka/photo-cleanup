@@ -123,7 +123,7 @@ def photo(name: str):
 
 @app.post("/api/approve")
 def approve(payload: dict = Body(...)):
-    decisions = payload["decisions"]  # {name: "keep" | "delete"}
+    decisions = payload["decisions"]  # name: "keep" | "delete"
     if payload.get("action") == "in_place" and STATE["source"] is not None:
         dest = STATE["source"] / "delete_candidates"
         dest.mkdir(exist_ok=True)

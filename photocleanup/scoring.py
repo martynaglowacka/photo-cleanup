@@ -1,4 +1,4 @@
-from .ranking import exposure, eyes_open, sharpness
+from .ranking import exposure, eyes_open, face_sharpness, sharpness
 
 WEIGHTS = {"eyes": 0.5, "sharpness": 0.35, "exposure": 0.15}
 REASONS = {"eyes": "eyes open", "sharpness": "sharpest", "exposure": "best exposed"}
@@ -14,10 +14,15 @@ def _normalize(values):
     return [None if v is None else (v - lo) / (hi - lo) for v in values]
 
 
+def _subject_sharpness(path):
+    fs = face_sharpness(path)  # focus of the face when there is one
+    return fs if fs is not None else sharpness(path)  # whole-image focus
+
+
 def score_cluster(paths):
     norm = {
         "eyes": _normalize([eyes_open(p) for p in paths]),
-        "sharpness": _normalize([sharpness(p) for p in paths]),
+        "sharpness": _normalize([_subject_sharpness(p) for p in paths]),
         "exposure": _normalize([exposure(p) for p in paths]),
     }
     rows = []
